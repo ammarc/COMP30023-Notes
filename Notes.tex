@@ -13,6 +13,7 @@
 %
 
 \documentclass[twoside]{article}
+\usepackage{graphicx}
 \title{Computer Systems}
 \date{}
 \author{}
@@ -225,4 +226,172 @@ The \textbf{test-and-set} assembly instruction can test and set a value in a sin
 \subsection{Semaphores}
 A semaphore is an integer value that can be accessed by primitives \texttt{wait(s)} and \texttt{signal(s)}. The former decrements s if > 0, and invoking process must be delayed otherwise; the latter increments s in an atomic operation. They allow mutual exclusion for a number of processes.
 
+\section{Network Fundamentals}
+Exam questions:
+\begin{itemize}
+    \item Network definitions
+    \item Packet switching vs. circuit switching
+    \item Network protocol hierarchies 
+    \item Relationships between a service and a protocol
+    \item OSI model
+\end{itemize}
+A \textbf{network} is an intricately connected system of objects; a \textbf{computer
+network} is a data network with computers at one or more of the nodes. The
+\textbf{internet} is not a network, but a network of networks; and the WWW is
+a distributed system that runs on top of the internet. An example of an 
+interaction between computers is shown in figure \ref{fig:network-example}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{network-example.png}
+  \caption{An example computer network interaction.}
+  \label{fig:network-example}
+\end{figure}
+\subsection{Differentiating Factors of Networks}
+One transmission type is \textbf{broadcast links}; broadcast networks have 
+a single communication channel shared by all machine on a network. Packets
+sent by any machine are received and an address field on the packet specifies
+the intended recipient. Broadcasting is a mode of operation which allows a 
+packet to be transmitted that every machine must process and multi-casting allows
+a subset of machines to process a given packet. Another transmission type is
+using \textbf{point-to-point links}, whose network consist of many connections
+between individual pairs of machines. Packets travelling from source to 
+destination must visit intermediate machines to determine a route - often
+multiple routes of variant efficiencies are available and therefore optimization
+is needed. \textbf{Unicasting} is used where point-to-point networks with a 
+single sender and receiver pair can exchange data.
+\subsection{Local Area Networks}
+These are distinguished by three factors:
+\begin{itemize}
+    \item \textbf{Size}: Worst-case transmission time can be predicted in advance
+    \item \textbf{Transmission Technology}: Wired or wireless
+    \item \textbf{Topology}:
+        \begin{itemize}
+            \item \textbf{Bus}: only a single machine on the network can 
+            transmit at any time. It requires a negotiation mechanism to resolve
+            transmission conflicts. Ethernet is teh most common bus network.
+            \item \textbf{Ring}: Each transmission bit is propagated 
+            individually. It requires access control to resolve propagation
+            queuing.
+        \end{itemize}
+\end{itemize}
+\subsection{Wide Area Networks}
+This has a large-scale geographical coverage and typically a single network
+provider is used across the WAN. They feature multiple hosts, typically owned
+by non-network providers. They also feature multiple sub-networks, including
+different transmission types and a range of \emph{routing} and \emph{switching}
+infrastructure. Typically used in companies, universities etc. and end systems
+usually connect into an ethernet switch. There are several types of WANs:
+\begin{itemize}
+    \item System interconnection, which can use short-range radio, low bandwidth
+    and other numerous technologies like infrared etc.
+    \item Wireless LAN: which has longer range radio, moderate bandwidth,
+    requires transmission and reception devices; 802.11 family is most common.
+\end{itemize}
+A \textbf{link} is a connection between two devices in the network and 
+\textbf{bandwidth} is the maximum speed in which data can be transmitted on
+a link. Data is transferred through the internet using:
+\begin{itemize}
+    \item \textbf{Circuit-Switching}: End-to-end resources reserved for the 
+    session; requires initial setup to reserve the resources. It has 
+    dedicated resources with reserved bandwidth and has no sharing.
+    \item \textbf{Packet-Switching}: Data stream divided into packets. Packets
+    from different users share network resources. Its pros include: different
+    packets can take different routes, it allows for resource sharing and thus
+    allows for better utilization of network resources. Its cons include: no
+    performance guarantee, possible congestions and packets maybe lost. See 
+    figure \ref{fig:packet-switch}.
+\end{itemize}
+\begin{figure}
+  \includegraphics[width=\linewidth]{packet-switch.png}
+  \caption{Packet switching on a network.}
+  \label{fig:packet-switch}
+\end{figure}
+\subsection{Network Protocol Hierarchies}
+The network can be considered as a stack of layers: each layer offers services
+to the layers \emph{above it}. See figure \ref{fig:protocol-stack}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{protocol-stack.png}
+  \caption{Example protocol stack.}
+  \label{fig:protocol-stack}
+\end{figure}
+There are different types of connections:
+\begin{itemize}
+    \item \textbf{Connection Oriented}: steps are \textbf{connect, use, disconnect}.
+    Negotiation is inherent in connection setup; this is similar to a 
+    telephone service.
+    \item \textbf{Connectionless}: steps are just \textbf{use}. The message is routed 
+    through intermediate nodes; this is similar to a postal service.
+\end{itemize}
+A \textbf{service} is a set of primitives that a layer provides to a layer above
+it i.e. an interface between layers. A \textbf{protocol} is a set of rules
+which govern the format and meaning of packets that are exchanged by peers 
+within a layer i.e. packets sent between peer entities. Now we need a 
+\textbf{network reference model}. Why? Because it provides a common baseline
+for the development of many services and protocols by independent parties.
+\subsection{OSI Reference Model}
+The \textbf{open systems interconnection}, or OSI, is a reference model that 
+states:
+\begin{itemize}
+    \item A layer should be created where a different abstraction is needed
+    \item Each layer should perform a well-defined function
+    \item The function of each layer should be chosen with a view toward
+    defining internationally standardized protocols
+    \item The layer boundaries should be chosen to minimize the information
+    flow across the interfaces
+    \item The number of layers should be large enough that distinct functions
+    need not be thrown together in the same layer out of necessity, and 
+    small enough that the architecture doesn't become unwieldy
+\end{itemize}
+The model is shown in figure \ref{fig:osi-model} and the TCP/IP model is shown
+in figure \ref{fig:tcp-ip}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{osi-model.png}
+  \caption{The OSI model.}
+  \label{fig:osi-model}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{tcp-ip.png}
+  \caption{The TCP/IP model.}
+  \label{fig:tcp-ip}
+\end{figure}
+\subsection{Network Layers}
+The \textbf{physical layer} corresponds to the signaling technology used.\\
+
+Next, the \textbf{data link layer} has: frame management which takes packets from 
+the network layers and encapsulates them into frames by adding a header, 
+payload, trailer etc; ethernet device address and a MAC address which is a 
+48-bit unique address and the data link layer's protocol specifies this 
+address in the header.\\
+
+The \textbf{network layer} has the primary function of
+providing functionality to ``combine networks'' and route data through traffic.
+It also creates an internet address space where each host has a 32-bit IP address,
+runs IP routing software, implements packet routing across the network, defines 
+a packet with a header containing information like packet size, source and 
+destination address and the packet payload. Routers are used to transfer data
+forward to nodes not directly connected to the network. Intermediate hosts are 
+typically called \textbf{gateways}. MAC addresses are flat and portable while 
+IP addresses are hierarchical and not portable and depend on the IP subnet to
+which the node is attached. It basically provides service to the transport 
+layer i.e. between nodes and hides details of link technology.
+\begin{figure}
+  \includegraphics[width=\linewidth]{switches-routers.png}
+  \caption{Switches and routers.}
+  \label{fig:switches-routers}
+\end{figure}
+\\
+
+The \textbf{transport layer} has two primary protocols:
+\begin{itemize}
+    \item \textbf{Transmission Control Protocol}: or TCP which is connection
+    oriented and therefore has reliable delivery. It provides stream-oriented
+    interface to applications.
+    \item \textbf{User Datagram Protocol}: or UDP is connectionless and is 
+    efficient but there is no guarantee of packet delivery.
+\end{itemize}
+This layer also provides the use of a 16-bit port number for applications. It
+basically provides services to the application layer and relies on the network
+layer for help and is a service between processes using sockets.\\
+
+Examples of the \textbf{application layer} include: HTTP, FTP, SMTP, DNS etc.
+It treats the layers below it as black boxes.
 \end{document}
