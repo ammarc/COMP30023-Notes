@@ -14,6 +14,8 @@
 
 \documentclass[twoside]{article}
 \usepackage{graphicx}
+\usepackage{listings}
+\lstset{language=C}
 \title{Computer Systems}
 \date{}
 \author{}
@@ -267,7 +269,7 @@ These are distinguished by three factors:
         \begin{itemize}
             \item \textbf{Bus}: only a single machine on the network can 
             transmit at any time. It requires a negotiation mechanism to resolve
-            transmission conflicts. Ethernet is teh most common bus network.
+            transmission conflicts. Ethernet is the most common bus network.
             \item \textbf{Ring}: Each transmission bit is propagated 
             individually. It requires access control to resolve propagation
             queuing.
@@ -281,7 +283,7 @@ different transmission types and a range of \emph{routing} and \emph{switching}
 infrastructure. Typically used in companies, universities etc. and end systems
 usually connect into an ethernet switch. There are several types of WANs:
 \begin{itemize}
-    \item System interconnection, which can use short-range radio, low bandwidth
+    \item System interconnection: which can use short-range radio, low bandwidth
     and other numerous technologies like infrared etc.
     \item Wireless LAN: which has longer range radio, moderate bandwidth,
     requires transmission and reception devices; 802.11 family is most common.
@@ -394,4 +396,249 @@ layer for help and is a service between processes using sockets.\\
 
 Examples of the \textbf{application layer} include: HTTP, FTP, SMTP, DNS etc.
 It treats the layers below it as black boxes.
+
+\section{Socket Programming}
+Learning outcomes:
+\begin{itemize}
+    \item The use of sockets in network programming
+    \item Difference between TCP and IP sockets and stream vs. datagram 
+    sockets
+    \item Socket system calls like: \texttt{socket(), bind(), accept()} and
+    reading and writing
+    \item Implement client and server programs
+    \item How to write a server that which uses TCP sockets and can handle
+    concurrent requests
+\end{itemize}
+\subsection{Port Numbers}
+Popular applications like web and e-mail have well-known ports. Servers usually
+have well-known port (0 - 1023) and clients pick an unused ephemeral port
+(1024 - 65535). To uniquely identify traffic a 5-tuple is used which has
+two IP addresses and a two port numbers and also the underlying transport
+protocol. Code for an interaction is shown in figures \ref{fig:sock1} and
+\ref{fig:sock2}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{sock1.png}
+  \caption{Communicating using a socket.}
+  \label{fig:sock1}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{sock2.png}
+  \caption{Code used for an interaction between a server and a client.}
+  \label{fig:sock2}
+\end{figure}
+\subsection{Sockets}
+Unbound sockets can be created which aren't connected to a the network and can 
+be used as either a client or a sever. See figure \ref{fig:create-socket}
+\begin{figure}
+  \includegraphics[width=\linewidth]{create-socket.png}
+  \caption{Creating a socket in C.}
+  \label{fig:create-socket}
+\end{figure}
+Once create, a socket can be bound to an internet port. A server process must 
+assign an address to its socket and make it known to its clients. A client 
+process may be able to obtain the correct socket address of any server on 
+any host. The code is:
+\begin{lstlisting}
+    #include <sys/types.h>
+    #include <sys/socket.h>
+
+    if (bind(fd, addr, addrlen) == -1)
+    {
+        // Error 
+        ...
+    }
+\end{lstlisting}
+\textbf{Listening} for connections can be done on a socket so it ``listens'' 
+for new connections. The backlog is the maximum number of connections the 
+socket will queue up. The code is:
+\begin{lstlisting}
+    #include <sys/types.h>
+    #include <sys/socket.h>
+
+    if (listen(fd, backlog) == -1)
+    {
+        // Error
+        ...
+    }
+\end{lstlisting}
+We must remember to specify the port and the address when we call \texttt{bind()}
+and \texttt{connect()}. The address can be either IPv4 or IPv6. Addresses 
+are defined via struct \texttt{sockaddr}. It has a data field big enough
+to hold the largest address of any family and \texttt{sa\_len} and \texttt{sa\_family}
+can be used to set length and type of the address. It treats the address as
+an opaque binary. It is defined as:
+\begin{lstlisting}
+    struct sockaddr {
+        uint8_t sa_len;
+        sa_family_t sa_family;
+        char sa_data[22];
+    };
+\end{lstlisting}
+Two variations exist for IPv4 and IPv6, \texttt{sockaddr\_in} can be used to 
+store IPv4. It has the same size and memory layout as \texttt{sockaddr} but 
+interprets the bits differently. The code is:
+\begin{lstlisting}
+    struct in_addr {
+        in_addr_t s_addr;
+    };
+
+    struct sockaddr_in {
+        uint8_t sin_len;
+        sa_family_t sin_family;
+        in_port_t sin_port;
+        struct in_addr sin_addr;
+        char sin_pad[16];
+    };
+\end{lstlisting}
+Address can be created as:
+\begin{lstlisting}
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+
+    struct sockaddr_in addr;
+    ...
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(80); // used to convert port
+
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+        ...
+    }
+\end{lstlisting}
+\subsection{Byte Order}
+Hosts differ on how they store data. In \textbf{little endian} the low-order
+byte is stored at the lower memory location: \([b_0, b_1,...,b_n]\). It is 
+used commonly in Intel's x86's. \textbf{Big endian} order has the high-order
+byte stored at the lowest memory location: \([b_n, b_{n-1},...,b_0]\). Figure 
+\ref{fig:endian} illustrates this point.
+\begin{figure}
+  \includegraphics[width=\linewidth]{endian.png}
+  \caption{Endian example.}
+  \label{fig:endian}
+\end{figure}
+IP is big endian i.e. ``network byte order''. Therefore, to write portable code
+we need to use \texttt{htons()} and \texttt{htonl()} to convert to network
+byte order and use \texttt{ntohs()} and \texttt{ntohl()} to convert to host 
+order. Doing so hides the details of the kind of machine being used. We us
+system calls when sending/receiving data structures longer than one byte.
+\subsection{Connections}
+Connections can be accepted using the following code which returns the new file
+descriptor for the connection and the client address:
+\begin{lstlisting}
+    int connfd;
+    struct sockaddr_in cliaddr;
+    socklen_t cliaddrlen = sizeof(cliaddr);
+    ...
+    connfd = accept(fd, (struct sockaddr *)&cliaddr, & cliaddrlen);
+    // Error when connfd == -1
+\end{lstlisting}
+A TCP/IP server may have multiple connections outstanding, since only one
+connection can be accepted at a time, we can accept connections and start a 
+new thread for each. Note that each call to \texttt{accept()} returns a 
+new file descriptor. A client can connect to a server using:
+\begin{lstlisting}
+    #include <netdb.h>
+
+    struct hostnet {
+        char* hname; // official host name
+        char* h_alieases;
+        int h_addrtype; // host address type
+        int h_length; // lenght of address
+        char** h_addr_list;
+    }
+
+    // translating server's name to an address
+    struct hostnet* gethostbyname(char* name);
+\end{lstlisting}
+The code shown in figure \ref{fig:server-connect} tries to open a connection
+to the server and times out after \(t\) seconds if no response.
+\begin{figure}
+  \includegraphics[width=\linewidth]{server-connect.png}
+  \caption{Connecting to a server.}
+  \label{fig:server-connect}
+\end{figure}
+The following code reads up to \texttt{BUFLEN} bytes of data from the connection
+and blocks until data available. It returns the actual number of bytes read,
+-1 otherwise. The data is \emph{not} null-terminated.
+\begin{lstlisting}
+    #define BUFLEN 1500
+    ...
+    ssize_t i;
+    ssize_t rcout;
+    char buf[BUFLEN];
+    ...
+    rcount = read(fd, buf, BUFLEN);
+    if (rcount = -1) {
+        // Error
+        ...
+    }
+    for (i = 0; i < rcount; i++) {
+        fprintf(stdout, "%c", buf[i]);
+    }
+    ...
+    // Send data on a TCP/IP connection and blocks until all data can be
+    // written 
+    char data[] = "Hello";
+    int datalen = strlen(data);
+    ...
+    if (write(fd, data, datalen) == -1) {
+        // Error
+        ...
+    }
+    ...
+    // Close and destroy a socket
+    // Close the file descriptor for each connection, then the file
+    // descriptor for the underlying socket
+    close(fd);
+\end{lstlisting}
+\subsection{Socket API}
+This has data structures to store/convert information about hosts and 
+connections: \texttt{gethostbyname, inet\_ntop, inet\_aton}. It has functions
+to create and bind socket descriptors: \texttt{socket, bind, listen}. It also 
+has functions to establish and tear down connections: \texttt{connect, accpet,
+close, shutdown}. It has functions to send/receive data: \texttt{send, 
+sendto, write, recv, recvfrom, read}.
+\begin{itemize}
+    \item \textbf{Stream sockets} are abstracted as sending a long stream of 
+    characters and are typically implemented on top of TCP. Shown in figure
+    \ref{fig:stream-socket}.
+    \item \textbf{Datagram sockets} are abstracted as sending a single packet
+    and are typically implemented on top of UDP. Shown in figure \ref{fig:datagram-socket}.
+\end{itemize}
+\begin{figure}
+  \includegraphics[width=\linewidth]{stream-socket.png}
+  \caption{Stream socket.}
+  \label{fig:stream-socket}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{datagram-socket.png}
+  \caption{Datagram socket.}
+  \label{fig:datagram-socket}
+\end{figure}
+Read/write to a stream in TCP or a ``connected'' datagram UDP socket:
+\begin{lstlisting}
+    int read (in sockfd, char* buf, size_t nbytes);
+
+    int write (in sockfd, char* buf, size_t nbytes);
+\end{lstlisting}
+The UDP \texttt{sendto()} and \texttt{recvfrom()} are defined as:
+\begin{lstlisting}
+    int sendto(int sockfd, char* buf, size_t nbytes, int flags, 
+    struct sockaddr* destaddr, int addrlen);
+
+    int recvfrom (int sockfd, char* buf, size_t nbytes, int flags,
+    struct sockaddr* srcaddr, int* addrlen);
+\end{lstlisting}
+This sends a datagram to another UDP socket and the other reads a datagram
+from a UDP socket.\\
+
+The following code can be called just before \texttt{bind()} and allows 
+\texttt{bind()} to succeed despite the existence of existing connections in the
+request TCP port. Connections in limbo with cause \texttt{bind()} to fail.
+\begin{lstlisting}
+    int yes = 1;
+    setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes));
+\end{lstlisting}
 \end{document}
