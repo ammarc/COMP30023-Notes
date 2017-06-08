@@ -428,13 +428,13 @@ protocol. Code for an interaction is shown in figures \ref{fig:sock1} and
 \end{figure}
 \subsection{Sockets}
 Unbound sockets can be created which aren't connected to a the network and can 
-be used as either a client or a sever. See figure \ref{fig:create-socket}
+be used as either a client or a sever. See figure \ref{fig:create-socket}.
 \begin{figure}
   \includegraphics[width=\linewidth]{create-socket.png}
   \caption{Creating a socket in C.}
   \label{fig:create-socket}
 \end{figure}
-Once create, a socket can be bound to an internet port. A server process must 
+Once created, a socket can be bound to an internet port. A server process must 
 assign an address to its socket and make it known to its clients. A client 
 process may be able to obtain the correct socket address of any server on 
 any host. The code is:
@@ -490,7 +490,7 @@ interprets the bits differently. The code is:
         char sin_pad[16];
     };
 \end{lstlisting}
-Address can be created as:
+Addresses can be created as:
 \begin{lstlisting}
     #include <sys/types.h>
     #include <sys/socket.h>
@@ -541,6 +541,7 @@ new file descriptor. A client can connect to a server using:
 \begin{lstlisting}
     #include <netdb.h>
 
+    // Note the definition of the hostnet struct
     struct hostnet {
         char* hname; // official host name
         char* h_alieases;
@@ -560,13 +561,13 @@ to the server and times out after \(t\) seconds if no response.
   \label{fig:server-connect}
 \end{figure}
 The following code reads up to \texttt{BUFLEN} bytes of data from the connection
-and blocks until data available. It returns the actual number of bytes read,
+and blocks until data available. It returns the actual number of bytes read;
 -1 otherwise. The data is \emph{not} null-terminated.
 \begin{lstlisting}
     #define BUFLEN 1500
     ...
     ssize_t i;
-    ssize_t rcout;
+    ssize_t rcount;
     char buf[BUFLEN];
     ...
     rcount = read(fd, buf, BUFLEN);
@@ -636,9 +637,142 @@ from a UDP socket.\\
 
 The following code can be called just before \texttt{bind()} and allows 
 \texttt{bind()} to succeed despite the existence of existing connections in the
-request TCP port. Connections in limbo with cause \texttt{bind()} to fail.
+requested TCP port. Connections in limbo with cause \texttt{bind()} to fail.
 \begin{lstlisting}
     int yes = 1;
     setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes));
 \end{lstlisting}
+\section{Security}
+Learning outcomes:
+\begin{itemize}
+    \item Key terms related to network security
+    \item Symmetric and public key cryptography
+    \item Use of cryptographic hash functions
+    \item Digital signatures and certificates
+    \item The use of SSL/TLS
+\end{itemize}
+Key terms include:
+\begin{itemize}
+    \item \textbf{Confidentiality} means that only the receiver should be able to 
+    ``understand'' the contents of the message.
+    \item \textbf{Authentication} is when the sender and receiver want to 
+    verify the identity of each other.
+    \item We also want \textbf{message integrity} i.e. the sender and the 
+    receiver want to ensure that the message is not altered during transit.
+    \item \textbf{Eavesdropping} means to intercept message.
+    \item \textbf{Message corruption} is caused by actively inserting messages
+    into connections
+    \item \textbf{Impersonation} happens when spoofs source address in the 
+    packet
+    \item \textbf{Hijacking} means to take over ongoing connections by removing
+    sender or receiver
+    \item \textbf{Denial of service} is when a service is being prevented from
+    being used by others e.g. by overloading resources
+\end{itemize}
+\textbf{Encrypting} means to send messages that are secret to everyone but
+the intended receiver; the sender has to hide messages for sending so that 
+no one else can understand it. \textbf{Decrypting} is essentially the opposite
+of encrypting, in that the receiver has to ``un-hide'' and recover the message.
+Figure \ref{fig:sym-crypto} shows symmetric cryptography and figure 
+\ref{fig:secret-key} shows secret-key cryptography where both sender and the
+receiver have agreed on the secret key in advance.
+\begin{figure}
+  \includegraphics[width=\linewidth]{sym-crypto.png}
+  \caption{Symmetric cryptography.}
+  \label{fig:sym-crypto}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{secret-key.png}
+  \caption{Secret-Key cryptography.}
+  \label{fig:secret-key}
+\end{figure}
+\subsection{Public-Key Cryptography}
+The receiver generates two key: a public key \(E\) for encrypting and a private
+key \(D\) for decrypting. It publicizes \(E\) so people can use this for
+encrypting and keeps \(D\) secret. The steps are:
+\begin{itemize}
+    \item The sender:
+    \begin{itemize}
+        \item Generates a secret key.
+        \item Encrypts a message with the secret key.
+        \item Encrypts the secret key with the receiver's public key.
+        \item Sends the encrypted message and the encrypted key.
+    \end{itemize}
+    \item The receiver:
+    \begin{itemize}
+        \item Uses the private key to decrypt the secret key.
+        \item Uses the secret key to decrypt the message.
+    \end{itemize}
+\end{itemize}
+Summary of the symmetric and public-key cryptography:
+\begin{center}
+    \begin{tabular}{| l | l | l |}
+    \hline \textbf{Property} & \textbf{Symmetric} & \textbf{Public Key} \\ \hline
+    \hline Key Distribution & Hard - share secret per pair of users & Easier - publish public key per user \\ \hline
+    \hline Runtime performance & Fast - good for high data rate & Slow - few, small, messages \\ \hline
+    \end{tabular}
+\end{center}
+\subsection{Digital Signatures}
+A digital signature is a mathematical link between a particular message and a 
+particular public key. \(Sign(\)message, privateKey\()\) appends a string
+of bits to a message and \(Verify(\)message, signature, publicKey\()\) 
+allows the recipient to check that message. Without a public key, one cannot
+forge/modify/sign a different message i.e. verification will fail. Figure
+\ref{fig:signs} shows public-key signatures.
+\begin{figure}
+  \includegraphics[width=\linewidth]{signs.png}
+  \caption{Public-key signatures.}
+  \label{fig:signs}
+\end{figure}
+Most digital signature algorithms (like RSA, DSA) hash a message before signing.
+A hast algorithm takes a (possibly long) message and produces a fixed-length
+digest (at least 160 bits). For crypto hashes, it should be infeasible to 
+find two messages that hash to the same digest (called a ``collision''). The 
+only problem now is how to obtain the correct public key of the receiver. A 
+\textbf{certificate} is just a special kind of signed message where the message
+says ``XYZ'' is the public key of a person plus some other data like a date. 
+The signer is someone whose public key you already know. The primary job of
+a certificate is to bind a public key to a user. Management of public keys 
+is shown in figure \ref{fig:key-manage}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{key-manage.png}
+  \caption{Management of public keys.}
+  \label{fig:key-manage}
+\end{figure}
+\subsection{SSL/TLS Secure Transmissions}
+SSL/TLS is an almost-ubiquitous protocol for transmitting things securely over
+the internet. It checks the certificate of the server you are talking to. It 
+encrypts data and also authenticates it. The \textbf{Secure Sockets Layer} or
+SSL provides transport layer security to any TCP-based application using SSL
+services e.g. between web browsers, servers for e-commerce and also provides
+security services such as server authentication, data encryption, client 
+authentication. See figure \ref{fig:ssl} for the modification to the TCP 
+structure.
+\begin{figure}
+  \includegraphics[width=\linewidth]{ssl.png}
+  \caption{Secure sockets layer.}
+  \label{fig:ssl}
+\end{figure}
+See figure \ref{fig:ssl-phases} for SSL phases. This first phase is the 
+handshake where Bob establishes TCP connection to Alice; authenticates Alice
+via CA-signed certificate and creates, encrypts (using Alice's public key),
+sends master secret key to Alice. Alice and Bob use shared secrets to generate
+four keys:
+\begin{itemize}
+    \item \(E_B\): Bob \(\rightarrow\) Alice data encryption key
+    \item \(E_A\): Alice \(\rightarrow\) Bob data encryption key
+    \item \(M_B\): Bob \(\rightarrow\) Alice MAC key
+    \item \(M_A\): Alice \(\rightarrow\) Bob MAC key
+\end{itemize}
+Figure \ref{fig:ssl-data-transfer} shows SSL data transfer.
+\begin{figure}
+  \includegraphics[width=\linewidth]{ssl-phases.png}
+  \caption{SSL phases.}
+  \label{fig:ssl-phases}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{ssl-data-transfer.png}
+  \caption{SSL data transfer.}
+  \label{fig:ssl-data-transfer}
+\end{figure}
 \end{document}
