@@ -778,7 +778,7 @@ Figure \ref{fig:ssl-data-transfer} shows SSL data transfer.
 \section{TCP/IP}
 Learning outcomes:
 \begin{itemize}
-    \item Network layer protocols like IP addresses, subnets, routing,
+    \item Network layer protocols, IP addresses, subnets, routing,
     fragmentation
     \item Transport layer protocols i.e. TCP, UDP, TCP connection, congestion
     control
@@ -857,7 +857,7 @@ ranging from on constraints to an 8-byte constraint to a 5-byte constraint.
 \end{figure}
 \subsection{IP Address}
 An IP address is a 32-bit number that encodes network and host information. See
-figure \ref{fig:ip-address.}
+figure \ref{fig:ip-address}.
 \begin{figure}
   \includegraphics[width=\linewidth]{ip-address.png}
   \caption{IP address.}
@@ -868,12 +868,12 @@ use while appearing as a single network for external use. Prefixes are written
 are as the lowest IP address in the block, followed by the size of the block.
 The size of the block is written with a slash at the end followed by a number
 indicating the number of bits in the network portion. Since IP addresses are 
-getting scarce a NAT is used to allow for unique addresses within a network, 
+getting scarce, a NAT is used to allow for unique addresses within a network, 
 but a shared IP address when it exits out of the local network. IPv6 is the 
 solution to the scarcity of the IPv4 problem, and uses 128-bit addresses with
 the goals to reduce routing table size, simplify protocol, improve security,
-roaming host without changing address allow future protocol evolution. 
-\textbf{Internet control protocols} control protocols int he network layer on
+roaming host without changing address to allow future protocol evolution. 
+\textbf{Internet control protocols} control protocols in the network layer on
 the internet; they are ICMP, ARP, RARP. The ICMP internet control message 
 protocol is used for testing and monitoring ambient conditions between hosts
 and routers; see \texttt{traceroute}. Types of messages used:
@@ -897,7 +897,7 @@ transport layer \textbf{services} provide interfaces between the network and
 the application layer and the \textbf{entities}, which are the software and 
 hardware that does the actual work, can exist in multiple locations.The services 
 provide a logical connection between application processes running on different
-hosts: connection establishment/release (for TCP only) and data transfer. 
+hosts: connection establishment/release (for TCP) and data transfer. 
 Although the network and transport layers are similar, we need the transport 
 layer as the it runs on hosts unlike the network layer which runs mostly on 
 routers; it can also fix reliability issues on top of an unreliable network. 
@@ -937,10 +937,11 @@ network, addressing, connection establishment and storage. \\
 Specification of the remote process to ``connect to'' is required at both the
 transport and the application layer. Addressing in the transport is usually 
 done using port numbers. A process server intercepts inbound connections and 
-spawns requested server and attaches the inbound connection. Addressing the
-the network layer is done using IP addresses. Port number can range from 0 
-to 65535 and split into three segments: well-known ports (0 - 1023), registered
-ports (1024 - 49151) and dynamic ports (49152 - 65535).
+spawns requested server and attaches the inbound connection. See figure 
+\ref{fig:process-server}. Addressing the network layer is done using IP 
+addresses. Port numbers can range from 0 to 65535 and split into three 
+segments: well-known ports (0 - 1023), registered ports (1024 - 49151) and 
+dynamic ports (49152 - 65535).
 \begin{figure}
   \includegraphics[width=\linewidth]{process-server.png}
   \caption{(a) shows process server interception and (b) shows how the process
@@ -960,7 +961,7 @@ Note that both the source and destination are required - destination allows
 initial routing for incoming segments and source allows reply routing for
 outgoing segments. It has advantage that it provides an IP interface with 
 mutliplexing and de-mutliplexing and transmission efficiencies. It has the 
-disadvantage of supporting flow control, error control and re-transmission of 
+disadvantage of no support for flow control, error control and re-transmission of 
 bad segments. Therefore, UDP is good when applications required precise 
 control over packet flow, error and timing. See figure \ref{fig:udp-header}.
 \begin{figure}
@@ -983,7 +984,7 @@ a socket at the sending host and a socket of the receiving host.
 Features of TCP are:
 \begin{itemize}
     \item Full duplex - data in both direction simultaneously
-    \item Point to point - exact pairs of sender and receivers
+    \item Point-to-point - exact pairs of senders and receivers
     \item Byte streams, not message streams - message boundaries are not
     preserved
     \item Buffer capable - TCP entity can choose to buffer prior to sending; 
@@ -991,7 +992,7 @@ Features of TCP are:
     indicates that transmission should be send immediately.
 \end{itemize}
 \subsubsection{TCP Details}
-The data exchanged between TCP entities is in segments with each segment 
+The data exchanged between TCP entities is in segments, with each segment 
 having a 20-byte header and 0 or more bytes of data. TCP entities decide
 on how long the fragments should be while following the constraints: 65515-byte
 IP payload; Maximum Transfer Unit (MTU) - generally 1500 bytes. \textbf{Sliding
@@ -1002,9 +1003,9 @@ Goal of a reliable connection are: ensuring packet lifetimes are bounded, assign
 sequence numbers that won't be used within the packet lifetime and ensure that 
 initial start and respond number sequences are agreed at the start of connection
 establishment. A three-way handshake is the solution to the problem where both
-sides assign the same sequence of numbers e.g. after host/router crash. Sender 
-and receiver agree on which sequencing strategy each will use before exchanging
-TPDUs.
+sides assign the same sequence of numbers e.g. after host/router crash. See 
+figure \ref{fig:three-way-handshake}. Sender and receiver agree on which 
+sequencing strategy each will use before exchanging TPDUs.
 \begin{figure}
   \includegraphics[width=\linewidth]{three-way-handshake.png}
   \caption{(a) Normal operation. (b) Old CONNECTION REQUEST appearing out of 
@@ -1051,8 +1052,17 @@ subnet mask and outgoing line (physical or virtual) e.g. \texttt{203.32.8.9
 Although routers have forwarding tables which map a prefix to an outgoing link,
 this doesn't adapt to failures, new equipment and the need to balance load. This
 is where routing protocols and the Dynamic Host Configuration Protocol, DHCP 
-come in. The \textbf{address resolution protocol} is used to resolve IP allocation
+come in. The \textbf{address resolution protocol}, or ARP, is used to resolve IP allocation
 to MAC addresses by Broadcasting IP address to all machines on the network. Proxy
 ARP is used for determination of IP allocation by a third party and ARP cache 
 is a temporary storage of ARP results.
+\section{Network Applications}
+Learning outcomes:
+\begin{itemize}
+    \item Difference between a protocol and a service
+    \item DNS (Domain Name System)
+    \item Email service and protocols e.g. POP3, SMTP
+    \item HTTP including persistent connections; pipelining and the role of 
+    proxy servers
+\end{itemize}
 \end{document}
