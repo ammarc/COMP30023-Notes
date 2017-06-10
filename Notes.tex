@@ -687,7 +687,7 @@ receiver have agreed on the secret key in advance.
   \label{fig:secret-key}
 \end{figure}
 \subsection{Public-Key Cryptography}
-The receiver generates two key: a public key \(E\) for encrypting and a private
+The receiver generates two keys: a public key \(E\) for encrypting and a private
 key \(D\) for decrypting. It publicizes \(E\) so people can use this for
 encrypting and keeps \(D\) secret. The steps are:
 \begin{itemize}
@@ -775,4 +775,284 @@ Figure \ref{fig:ssl-data-transfer} shows SSL data transfer.
   \caption{SSL data transfer.}
   \label{fig:ssl-data-transfer}
 \end{figure}
+\section{TCP/IP}
+Learning outcomes:
+\begin{itemize}
+    \item Network layer protocols like IP addresses, subnets, routing,
+    fragmentation
+    \item Transport layer protocols i.e. TCP, UDP, TCP connection, congestion
+    control
+    \item Format and use of protocol headers and how Wireshark can be used
+    \item ARP
+\end{itemize}
+Data traffic is divided into packets, each of which contains a header with 
+source and destination address. The packets travel separately through the 
+network. The sender puts data into packets. The network interface hardware
+then transforms data for physical transmission. The network delivers packets
+to a variable destination, possibly along different paths. The receiver 
+converts physical signal back into a data packet and assembles packets back
+into data. Note that some packets maybe lost, corrupted or delivered out of 
+order; error detection or correction is provided by higher-level protocol. \\
+
+In a \textbf{connectionless} transfer the datagrams are injected into subnet
+independently and packets individually routed to destination. With the internet
+the packets could move in a potentially unreliable subnet - QoS is not easily 
+implemented. In a \textbf{connection-oriented} transfer packets travelling 
+between destinations all use the same route. An example is a telecommunication
+company which guarantees reliability as QoS is important. There are several 
+issues to be considered when connecting networks such as: different network
+types and protocols, different motivations for network choices and different
+technologies at both hardware and software levels. Connectionless networks
+can be connected using datagrams. See figure \ref{fig:internetworking} for 
+internetworking and figure \ref{fig:network-diff} for how networks can differ.
+\begin{figure}
+  \includegraphics[width=\linewidth]{internetworking.png}
+  \caption{Internetworking.}
+  \label{fig:internetworking}
+\end{figure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{network-diff.png}
+  \caption{How networks can differ.}
+  \label{fig:network-diff}
+\end{figure}
+\subsection{Internet Protocol}
+IP provides a ``best effort'' service to route datagrams from source host to 
+destination host. These hosts may be on the same network or on different
+networks. It uses a connectionless model; its design goals are:
+\begin{itemize}
+    \item Services should be independent of router technologies
+    \item Transport layer should be shielded from number, type and topology of 
+    routers
+    \item Network addressing should use a uniform numbering plan
+\end{itemize}
+\subsection{IPv4 Frame Structure}
+\begin{figure}
+  \includegraphics[width=\linewidth]{ipv4-header.png}
+  \caption{IPv4 header showing frame structure.}
+  \label{fig:ipv4-header}
+\end{figure}
+IPv4 frame consists of a header and some text. The header is a 20 byte fixed 
+part + variable-length optional part. The version could be set as IPv4 or IPv6.
+IHL is the header length and type differentiates different classes of service.
+The total length is the header and payload, maximum length is 0xffff or 
+65535 bytes. Identification allows host to determine which datagram the new 
+fragment belongs to - all fragments of the same datagram have the same ID. 
+DF is the don't fragment byte. MF is the more fragment byte i.e. are there more
+or is this the last one? Fragment offset means where in the datagram the 
+current fragment belongs. TTL limits packet lifetime; could be in hops or 
+seconds. Protocol refers to TCP, UDP or others. The header checksum verifies
+the header only. Finally, options include security, strict vs loose routing,
+record route, timestamp etc.
+\subsection{Fragmentation}
+All networks have a maximum size for packets motivated by various factors like:
+hardware, OS, protocols, standards compliance, desire to reduce transmissions 
+due to errors, desire for efficiency in communication channel etc. 
+\textbf{Fragmentation} is the division of packets into fragments, this allows
+network gateways to meet constraints. Figure \ref{fig:frag} shows fragmentation
+ranging from on constraints to an 8-byte constraint to a 5-byte constraint.
+\begin{figure}
+  \includegraphics[width=\linewidth]{frag.png}
+  \caption{Packet fragmentation.}
+  \label{fig:frag}
+\end{figure}
+\subsection{IP Address}
+An IP address is a 32-bit number that encodes network and host information. See
+figure \ref{fig:ip-address.}
+\begin{figure}
+  \includegraphics[width=\linewidth]{ip-address.png}
+  \caption{IP address.}
+  \label{fig:ip-address}
+\end{figure}
+\textbf{Subnetting} allows networks to be split into several parts for internal
+use while appearing as a single network for external use. Prefixes are written
+are as the lowest IP address in the block, followed by the size of the block.
+The size of the block is written with a slash at the end followed by a number
+indicating the number of bits in the network portion. Since IP addresses are 
+getting scarce a NAT is used to allow for unique addresses within a network, 
+but a shared IP address when it exits out of the local network. IPv6 is the 
+solution to the scarcity of the IPv4 problem, and uses 128-bit addresses with
+the goals to reduce routing table size, simplify protocol, improve security,
+roaming host without changing address allow future protocol evolution. 
+\textbf{Internet control protocols} control protocols int he network layer on
+the internet; they are ICMP, ARP, RARP. The ICMP internet control message 
+protocol is used for testing and monitoring ambient conditions between hosts
+and routers; see \texttt{traceroute}. Types of messages used:
+\begin{center}
+    \begin{tabular}{| l | l |}
+    \hline \textbf{Message type} & \textbf{Description} \\ \hline
+    \hline Destination unreachable & Packet could not be delivered \\ \hline
+    \hline Time exceeded & Time to live field hit 0 \\ \hline
+    \hline Parameter problem & Invalid header field \\ \hline
+    \hline Source quench & Choke packet \\ \hline
+    \hline Redirect & Teach a router about geography \\ \hline
+    \hline Echo and Echo reply & Check if a machine is alive \\ \hline
+    \hline Timestamp request/reply & Same as Echo, but with timestamp \\ \hline
+    \hline Router advertisement/solicitation & Find nearby router \\ \hline
+    \end{tabular}
+\end{center}
+\subsection{Transport Layer}
+The main function of this layer is to provide reliable, efficient data transfer
+from source to destination, independent of the physical and data layers. The
+transport layer \textbf{services} provide interfaces between the network and 
+the application layer and the \textbf{entities}, which are the software and 
+hardware that does the actual work, can exist in multiple locations.The services 
+provide a logical connection between application processes running on different
+hosts: connection establishment/release (for TCP only) and data transfer. 
+Although the network and transport layers are similar, we need the transport 
+layer as the it runs on hosts unlike the network layer which runs mostly on 
+routers; it can also fix reliability issues on top of an unreliable network. 
+Messages sent to and from the transport layer are abstracted further and are
+called transport protocol data units, TPDUs. So we have encapsulation of TPDUs
+in packets (from the network layer) in frames (from the data link layer). See
+figure \ref{fig:encaps}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{encaps.png}
+  \caption{Encapsulation of messages.}
+  \label{fig:encaps}
+\end{figure}
+\textbf{Primitives} are core functions which allow interface with transport 
+services.
+\begin{center}
+    \begin{tabular}{| l | l | l |}
+        \hline \textbf{Primitive} & \textbf{Packet sent} & \textbf{Meaning} \\ \hline
+        \hline LISTEN & none & Block until some process tries to connect \\ \hline
+        \hline CONNECT & CONNECTION REQ. & Actively attempt to establish a connection \\ \hline
+        \hline SEND & DATA & Send information \\ \hline
+        \hline RECEIVE & none & Block until a DATA packet arrives \\ \hline
+        \hline DISCONNECT & DISCONNECTION REQ. & This side wants to release the connection \\ \hline
+    \end{tabular}
+\end{center}
+\begin{figure}
+  \includegraphics[width=\linewidth]{connection-state.png}
+  \caption{The dashed lines show the server's state sequence and the solid lines
+  show the client's state sequence. The text in italics is triggered after 
+  packet arrival.}
+  \label{fig:connection-state}
+\end{figure}
+Transport services are implemented as protocols used between transport entities.
+Transport is similar to the data link layer as they both have error control,
+sequencing and flow control; the differ in: physical network vs physical/data/
+network, addressing, connection establishment and storage. \\
+
+Specification of the remote process to ``connect to'' is required at both the
+transport and the application layer. Addressing in the transport is usually 
+done using port numbers. A process server intercepts inbound connections and 
+spawns requested server and attaches the inbound connection. Addressing the
+the network layer is done using IP addresses. Port number can range from 0 
+to 65535 and split into three segments: well-known ports (0 - 1023), registered
+ports (1024 - 49151) and dynamic ports (49152 - 65535).
+\begin{figure}
+  \includegraphics[width=\linewidth]{process-server.png}
+  \caption{(a) shows process server interception and (b) shows how the process
+  server goes back to listening after attaching the process.}
+  \label{fig:process-server}
+\end{figure}
+Connections can lose, duplicate and store packets, complicating things. 
+Congested networks can cause delayed acknowledgements incurring multiple 
+repeated transmissions, any of which may arrive out of sequence i.e. delayed
+duplicates. Therefore causing applications to degenerate with such congestions.
+\subsection{UDP}
+UDP transmits in segments consisting of a header followed by the payload. UDP
+headers contain source and destination ports, payload is handed to the process
+which is attached to the particular port at destination. The main advantage of
+using this over raw IP is the ability to specify a source and destination. 
+Note that both the source and destination are required - destination allows 
+initial routing for incoming segments and source allows reply routing for
+outgoing segments. It has advantage that it provides an IP interface with 
+mutliplexing and de-mutliplexing and transmission efficiencies. It has the 
+disadvantage of supporting flow control, error control and re-transmission of 
+bad segments. Therefore, UDP is good when applications required precise 
+control over packet flow, error and timing. See figure \ref{fig:udp-header}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{udp-header.png}
+  \caption{The UDP header.}
+  \label{fig:udp-header}
+\end{figure}
+\subsection{TCP}
+The TCP transport entity manages TCP stream and interfaces to the IP layer. It
+accepts user datagrams and segments them and sends each segment as a separate
+IP datagram and the recipient TCP entities do the reconstruction. For the TCP
+service to be activated, connections must be explicitly established between
+a socket at the sending host and a socket of the receiving host.
+\begin{figure}
+  \includegraphics[width=\linewidth]{tcp-header.png}
+  \caption{The TCP header.}
+  \label{fig:tcp-header}
+\end{figure}
+\subsubsection{Feature of TCP Connections}
+Features of TCP are:
+\begin{itemize}
+    \item Full duplex - data in both direction simultaneously
+    \item Point to point - exact pairs of sender and receivers
+    \item Byte streams, not message streams - message boundaries are not
+    preserved
+    \item Buffer capable - TCP entity can choose to buffer prior to sending; 
+    the PUSH flag indicates a transmission must not be delayed; URGENT flag
+    indicates that transmission should be send immediately.
+\end{itemize}
+\subsubsection{TCP Details}
+The data exchanged between TCP entities is in segments with each segment 
+having a 20-byte header and 0 or more bytes of data. TCP entities decide
+on how long the fragments should be while following the constraints: 65515-byte
+IP payload; Maximum Transfer Unit (MTU) - generally 1500 bytes. \textbf{Sliding
+window protocol}: sender transmits and starts a timer; the receiver responds 
+with an acknowledgement; if the timer runs out, the segment is sent again.
+\subsubsection{Three-Way Handshake}
+Goal of a reliable connection are: ensuring packet lifetimes are bounded, assign
+sequence numbers that won't be used within the packet lifetime and ensure that 
+initial start and respond number sequences are agreed at the start of connection
+establishment. A three-way handshake is the solution to the problem where both
+sides assign the same sequence of numbers e.g. after host/router crash. Sender 
+and receiver agree on which sequencing strategy each will use before exchanging
+TPDUs.
+\begin{figure}
+  \includegraphics[width=\linewidth]{three-way-handshake.png}
+  \caption{(a) Normal operation. (b) Old CONNECTION REQUEST appearing out of 
+  nowhere. (c) Duplicate CONNECTION REQUEST and duplicate ACK.}
+  \label{fig:three-way-handshake}
+\end{figure}
+\subsection{Congestion Control}
+When networks are overloaded, congestion occurs, potentially affecting all 
+layers. Although lower layers like physical and data link, try to fix this,
+in reality TCP impacts congestion most significantly as it offers methods to 
+transparently reduce the data rate and hence, reduce congestion. TCP adopts
+a defensive stance - an open loop solution: at connection time a suitable 
+window size is chosen by the receiver based on its buffer size. If the sender
+is constrained to this size, then congestion will not occur due to buffer
+overflow at the receiver itself, but may still occur due to the network itself.
+It also ensure packet lifetimes are bounded.
+\subsubsection{Incremental Congestion Control}
+On connection establishment, the sender initializes the congestion window to
+the size of the maximum segment in use on the transmission, and transmits one
+segment. If this segment is acknowledged before the timer expires, the sender
+adds another segment's worth of bytes to the congestion window, making it two
+maximum size segments, and transmits two segments. As each segment is acknowledged,
+the size of the congestion window keeps increasing by one maximum segment size.
+In effect, each acknowledgement doubles the size of the congestion window - 
+which grows until either a timeout occurs or the receiver's specified window
+is reached.
+\subsection{Packet Routing}
+Each router has a forwarding table which maps destination address to outgoing
+interfaces. Upon getting a packet the router: inspects the destination IP
+address and looks it up in its table; it determines the outgoing interface and
+forwards that packet to that interface. \\
+
+The \textbf{routing algorithm} is responsible for deciding on which output line
+an incoming packet should be transmitted. Routing algorithms could be 
+non-adaptive i.e. static decision-making process or they could be adaptive i.e.
+dynamic decision-making process. But as network grow in size, the routing tables
+expand, impacting performance and memory requirements. We can use \textbf{hierarchical 
+routing} here - divide all routers into regions allow efficiencies. Here each 
+router knows about other routers in its region but nothing about routers in other
+regions; router which connect to two regions act as exchange points for routing 
+decisions. Routing tables are typically based around a triple: IP address, 
+subnet mask and outgoing line (physical or virtual) e.g. \texttt{203.32.8.9 
+255.255.255.0 Eth0} and the longest mask is always used when choosing a route.
+Although routers have forwarding tables which map a prefix to an outgoing link,
+this doesn't adapt to failures, new equipment and the need to balance load. This
+is where routing protocols and the Dynamic Host Configuration Protocol, DHCP 
+come in. The \textbf{address resolution protocol} is used to resolve IP allocation
+to MAC addresses by Broadcasting IP address to all machines on the network. Proxy
+ARP is used for determination of IP allocation by a third party and ARP cache 
+is a temporary storage of ARP results.
 \end{document}
