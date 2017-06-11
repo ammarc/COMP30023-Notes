@@ -1065,4 +1065,133 @@ Learning outcomes:
     \item HTTP including persistent connections; pipelining and the role of 
     proxy servers
 \end{itemize}
+The application layer protocols define:
+\begin{itemize}
+    \item Types of messages exchanges: e.g. request, response
+    \item Message syntax: what fields are in the messages and how fields are 
+    delineated
+    \item Message semantics: meaning of information in fields
+    \item Rules for when and how processes send and respond to messages
+\end{itemize}
+An application requires the following transport services:
+\begin{itemize}
+    \item \textbf{Data loss}: Some apps like audio can tolerate some loss, while
+    other apps like file transfer and telnet required 100\% reliable data transfer
+    \item \textbf{Timing}: Some apps like internet telephony, interactive games 
+    require low delay to be ``effective''
+    \item \textbf{Throughput}: Some apps like multimedia require a minimum 
+    amount of throughput to work while other apps, called elastic, make use of 
+    whatever throughput they get
+    \item \textbf{Security}: Issues such as encryption and data integrity must 
+    be considered
+\end{itemize}
+Transport service requirement of common applications:
+\begin{center}
+    \begin{tabular}{| l | l | l | l |}
+        \hline \textbf{Application} & \textbf{Data Loss} & \textbf{Throughput} & \textbf{Time Sensitive} \\ \hline
+        \hline file transfer & no loss & elastic & no \\ \hline
+        \hline e-mail & no loss & elastic & no \\ \hline
+        \hline web documents & no loss & elastic & no \\ \hline
+        \hline real-time audio/video & loss-tolerant & need a certain amount & yes, 100 ms \\ \hline
+        \hline stored audio/video & loss-tolerant & same as above & yes, few seconds \\ \hline
+        \hline interactive games & loss-tolerant & few kbps up & yes, 100 ms \\ \hline
+        \hline instant messaging & no loss & elastic & yes and no \\ \hline
+    \end{tabular}
+\end{center}
+
+\begin{center}
+    \begin{tabular}{| l | l | l |}
+        \hline \textbf{Application} & \textbf{App Layer Protocol} & \textbf{Underlying Transport Protocol} \\ \hline
+        \hline e-mail & SMTP & TCP \\ \hline
+        \hline remote terminal access & Telnet & TCP \\ \hline
+        \hline web & HTTP & TCP \\ \hline
+        \hline file transfer & FTP & TCP \\ \hline
+        \hline streaming multimedia & HTTP, RTP & TCP or UDP \\ \hline
+        \hline internet telephony & SIP, RTP, proprietary(like Skype) & typically UDP \\ \hline
+    \end{tabular}
+\end{center}
+\subsection{DNS}
+\textbf{Domain Name System}, or DNS, is essentially the technology behind 
+\texttt{host.domain.com} to an IP address. It comprises of four elements:
+\begin{itemize}
+    \item \textbf{Domain name space}: DNS uses tree-structured name space to 
+    identify resources on the internet
+    \item \textbf{DNS database}: Each node/leaf in the name space tree names a 
+    set of information that is contained in a resource record (RR). The 
+    collection of all RRs is organized into a distributed database.
+    \item \textbf{Name servers}: Server programs that hold information about a 
+    portion of the domain name tree structure and the associated RRs.
+    \item \textbf{Resolvers}: These are programs that extract information from 
+    name servers in response to client requests.
+\end{itemize}
+\subsubsection{Domain Name Characteristics}
+Domain names are: case sensitive, can have up to 63 characters per constituent,
+can have up to 255 characters per path, can be internationalized. Naming 
+conventions usually follow either organizational or physical boundaries like 
+\texttt{au.ibm.com / uk.ibm.com} for e-mail and \texttt{ibm.com.au / ibm.co.uk} 
+for web. Absolute domain name ends in a ``.''. Relative domain names end in a 
+constituent e.g. ``.com''. To insert a record into DNS for a company, first
+names are provided along with authoritative name server. Then the registrar 
+inserts two RRs into the com TLD server: \texttt{company.com, dns1.company.com, A}
+and then \texttt{dns1.company.com, 8.8.8.2, A}. Finally, to create an authoritative
+server: add Type A record for \texttt{www.company.com} and Type MX record for
+\texttt{company.com}.
+\subsubsection{Name Servers}
+A DNS is divided into overlapping zones and the \textbf{name servers} are authoritative 
+for that zone and there are usually two nameservers for a zone. Name servers are
+arranged in hierarchical manner extending from a set of root servers. Root name
+servers form the authoritative cluster for enquiries and are contacted by a local
+name server that can not resolve a name. There are 13 root name servers globally
+(a root server maybe a cluster of servers in the IP space). F-ROOT 13 servers;
+J-ROOT 8 servers. \\
+
+Top-level domain DNS servers are responsible for com, org, net edu etc. and all
+top-level country domains like uk, fr, au, jp etc. Examples include: Network 
+Solutions maintains servers for com and Education for edu. Authoritative DNS 
+servers are organizations' DNS servers, providing authoritative host name to IP
+mapping for organizations' servers e.g. web, mail. It can be maintained by 
+organization or service provider. Local DNS servers don't strictly belong to 
+hierarchy. Typically, each ISP (residential ISP, company, university) has a 
+``default name server'' which handles DNS queries - a query is set to its local
+DNS server which acts as a proxy and forwards query into hierarchy. \\
+
+A \textbf{resolver client} asks the local DNS for the domain to IP mapping: if 
+the answer is known by the local DNS, then it sends the answer and if not, the 
+local DNS queries up the hierarchy to the top level (root) DNS for the domain 
+and then relays the answer to the resolver client. Essentially, this is a 
+recursive query mode. Queries are subject to timers to avoid longer then 
+necessary response times. See figure \ref{fig:query-resolve}. Basically, the 
+client application extracts the server name and invokes a system call to trigger
+a DNS resolve code, \texttt{getbyhostname()} and the server application extracts
+client IP address from the socket and optionally invokes system call to 
+translate into name, \texttt{gethostbyaddr()}.
+\begin{figure}
+  \includegraphics[width=\linewidth]{query-resolve.png}
+  \caption{Example of a resolver looking up a remote name in 10 steps.}
+  \label{fig:query-resolve}
+\end{figure}
+Steps that occur when a link is selected:
+\begin{itemize}
+    \item Browser determines the URL 
+    \item Browser asks DNS for the IP address of the server 
+    \item DNS replies
+    \item The browser makes a TCP connection
+    \item Sends HTTP request for the page
+    \item Server sends the page as HTTP response
+    \item Browser fetches other URLs as needed 
+    \item The browser displays the page 
+    \item The TCP connections are released
+\end{itemize}
+\subsection{Web Caches}
+The goal of the web cache or the proxy server, is to satisfy the client 
+request without involving the origin server. The user sets the browser which
+accesses the web via cache. The browser sends all HTTP requests to the cache
+which returns the object if it is in the cache, and requests the object from
+the origin server, otherwise. The cache acts as both a client (to the origin
+server) and a server (to the original requesting client). \\
+
+Web caching reduces the response time for client requests and reduces traffic 
+on an institution's access link. Since the internet is dense with caches, it 
+allows ``poor'' content providers to effectively deliver content like P2P file
+sharing.
 \end{document}
